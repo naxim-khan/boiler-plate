@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  // Prisma automatically reads DATABASE_URL
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
