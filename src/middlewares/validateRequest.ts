@@ -1,35 +1,51 @@
 import type { Request, Response, NextFunction } from 'express';
-import { ZodType, ZodError, z } from 'zod';
+import { ZodType, ZodError } from 'zod';
 import { ApiError } from '../common/errors/api-error';
 import { ERROR_CODES } from '../common/errors/error-codes';
 
 /**
- * Middleware to validate request body, query, and params using Zod schema.
- * Throws ApiError on validation failure, handled by global error middleware.
+ * Middleware to validate request body, query, and params using Zod schema
+ * Now supports async validation for email domain checks
  */
 export const validateRequest = (schema: ZodType<any>) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse({
+      const validatedData = await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
       });
+
+      // Replace request data with validated data
+      if (validatedData.body) req.body = validatedData.body;
+      if (validatedData.params) req.params = validatedData.params;
+      if (validatedData.query) req.query = validatedData.query;
+
       next();
     } catch (err) {
       if (err instanceof ZodError) {
-        // Get structured error tree
-        const tree = z.treeifyError(err);
+        // Format validation errors for client
+        const formattedErrors = err.issues.map(error => ({
+          field: error.path.join('.'),
+          message: error.message,
+          code: error.code,
+        }));
+
         return next(
           new ApiError(
             400,
-            'Validation failed',
+            'Request validation failed',
             ERROR_CODES.VALIDATION_ERROR,
-            tree
+            {
+              validationErrors: formattedErrors,
+              totalErrors: formattedErrors.length,
+            }
           )
         );
       }
-      next(err); // pass unknown errors to global error handler
+      
+      // Pass other errors to global error handler
+      next(err);
     }
   };
 };

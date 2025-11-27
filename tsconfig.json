@@ -4,7 +4,7 @@
     "moduleResolution": "node",
     "target": "ES2023",
     "types": ["node", "jest"],
-
+    // "allowImportingTsExtensions": true,
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -19,7 +19,11 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    "rootDir": ".",       
+    "outDir": "dist"        
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

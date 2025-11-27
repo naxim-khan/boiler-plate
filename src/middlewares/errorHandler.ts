@@ -1,4 +1,3 @@
-// src/middlewares/errorHandler.ts
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../common/errors/api-error';
 import logger from '../config/logger';
@@ -10,10 +9,10 @@ export default function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  // Log the error
+  // Log full error for internal debugging
   logger.error({
     method: req.method,
-    path: req.path,
+    path: req.originalUrl,
     message: err.message,
     stack: err.stack,
     ...(err.details ? { details: err.details } : {}),
@@ -30,12 +29,11 @@ export default function errorHandler(
     );
   }
 
-  // Fallback for unknown errors
+  // Fallback for unknown/unexpected errors
   return errorResponse(
     res,
     500,
     'Internal Server Error',
-    'INTERNAL_SERVER_ERROR',
-    err
+    'INTERNAL_SERVER_ERROR'
   );
 }

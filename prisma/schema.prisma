@@ -1,17 +1,19 @@
-datasource db {
-  provider = "postgresql"
-  // *No* `url` here — Prisma 7+ expects the URL passed at runtime or via config
-}
-
 generator client {
   provider   = "prisma-client"
-  engineType = "client"
-  output     = "../src/generated"
+  output     = "../src/generated/prisma"
+  // engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
 }
 
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
+  password  String // Add this line
+  role      String   @default("USER")
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
