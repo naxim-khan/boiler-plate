@@ -107,15 +107,13 @@ export const refreshTokenController = async (
   next: NextFunction
 ) => {
   try {
-    // Safely read refreshToken from cookies or request body
-    const refreshToken =
-      (req.cookies && req.cookies.refreshToken) ||
-      (req.body && req.body.refreshToken);
+    // Get refresh token from cookies or body
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    if (!refreshToken || typeof refreshToken !== 'string') {
+    if (!refreshToken) {
       throw new ApiError(
         401,
-        'Refresh token is required',
+        'Refresh token is required in cookies or request body',
         ERROR_CODES.INVALID_TOKEN
       );
     }

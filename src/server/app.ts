@@ -9,11 +9,27 @@ import errorHandler from '../middlewares/errorHandler.js';
 import jsonErrorHandler from '../middlewares/jsonErrorHandler.js'; // Add this
 import apiV1Routes from "../routes/index.js"
 import { setupSwagger } from '../swagger.js';
+import cookieParser from 'cookie-parser';
+import logger from '../config/logger.js';
 
 const app = express();
 
+// Response time logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start; // in ms
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
+
 // Security middleware first
 app.use(helmet());
+
+// This MUST be before any routes
+app.use(cookieParser());
 
 // CORS configuration
 app.use(cors({ 

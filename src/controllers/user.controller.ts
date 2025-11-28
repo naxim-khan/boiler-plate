@@ -3,10 +3,40 @@ import * as userService from '../services/user.service';
 import { successResponse } from '../utils/response';
 import { ApiError } from '../common/errors/api-error';
 import { ERROR_CODES } from '../common/errors/error-codes';
+import { buildUserFilters } from '../utils/userFilters';
+import { uploadUserAvatarService } from '../services/user.service';
+
+// export const getAllUsersController = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const users = await userService.getAllUsersService();
+//     return successResponse(res, "Users retrieved successfully", users);
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
 
 export const getAllUsersController = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await userService.getAllUsersService();
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const cursor = req.query.cursor ? Number(req.query.cursor) : undefined;
+
+    // Sorting
+    let orderBy: Record<string, "asc" | "desc"> = { id: "asc" };
+    if (req.query.orderBy) {
+      const v = String(req.query.orderBy).toLowerCase();
+      if (v === "asc" || v === "desc") {
+        orderBy = { id: v };
+      } else {
+        return res.status(400).json({ message: "Invalid orderBy value, use 'asc' or 'desc'" });
+      }
+    }
+
+    // Filtering
+    const where = buildUserFilters(req.query);
+
+    const users = await userService.getUsersWithPaginationService(limit, cursor, orderBy, where);
+
     return successResponse(res, "Users retrieved successfully", users);
   } catch (err) {
     next(err);
@@ -109,6 +139,24 @@ export const deleteSelfController = async (req: Request, res: Response, next: Ne
     });
 
     return successResponse(res, "Your account has been deleted successfully", deletedUser);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// upload image controller
+export const uploadProfileImageController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user.userId;
+
+    if (!req.file) {
+      throw new ApiError(400, "No file uploaded", ERROR_CODES.INVALID_INPUT);
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const updatedUser = await uploadUserAvatarService(userId, avatarUrl);
+
+    return successResponse(res, "Profile image uploaded successfully", updatedUser);
   } catch (err) {
     next(err);
   }

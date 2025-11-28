@@ -22,6 +22,21 @@ export interface UpdateUserInput {
 export const getAllUsersService = async () => {
   return userRepository.getUsers();
 };
+// pagination sorting filteration function new
+export const getUsersWithPaginationService = async (
+  limit: number,
+  cursor?: number,
+  orderBy?: Record<string, 'asc' | 'desc'>,
+  where?: any
+) => {
+  try {
+    return await userRepository.getUsersPaginated(limit, cursor, where, orderBy);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, "Failed to fetch users", ERROR_CODES.INTERNAL);
+  }
+};
+
 
 export const getUserByIdService = async (id: number) => {
   return userRepository.getUserById(id);
@@ -70,5 +85,15 @@ export const deleteUserService = async (id: number) => {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, 'Failed to delete user', ERROR_CODES.INTERNAL);
+  }
+};
+
+// upload image service
+export const uploadUserAvatarService = async (userId: number, avatarUrl: string) => {
+  try {
+    return await userRepository.updateUserAvatar(userId, avatarUrl);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, "Failed to upload profile image", ERROR_CODES.INTERNAL);
   }
 };

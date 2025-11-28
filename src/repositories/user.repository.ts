@@ -3,6 +3,9 @@ import { ApiError } from '../common/errors/api-error';
 import { ERROR_CODES } from '../common/errors/error-codes';
 import { handlePrismaError } from '../utils/prismaError';
 import type { CreateUserInput } from '../services/user.service';
+import {paginate} from '../utils/pagintion.util';
+import type { PaginatedResult } from '../utils/pagintion.util';
+// import { buildUserFilters } from '../utils/userFilters';
 
 // Safe user selection (exclude password)
 const userSelect = {
@@ -10,6 +13,7 @@ const userSelect = {
   name: true,
   email: true,
   role: true,
+  avatarUrl:true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -43,6 +47,39 @@ export const getUsers = async () => {
     throw handlePrismaError(err);
   }
 };
+
+// Cursor-based pagination + filtering + sorting
+export const getUsersPaginated = async (
+  limit: number,
+  cursor?: number,
+  where?: any,
+  orderBy: Record<string, 'asc' | 'desc'> = { id: 'asc' } 
+): Promise<
+  PaginatedResult<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>
+> => {
+  try {
+    return await paginate({
+      prisma,
+      model: "user",
+      select: userSelect,
+      limit,
+      cursor,
+      orderBy,
+      where,
+    });
+  } catch (err: any) {
+    throw handlePrismaError(err);
+  }
+};
+
+
 
 export const getUserById = async (id: number) => {
   try {
@@ -232,6 +269,32 @@ export const emailExists = async (email: string): Promise<boolean> => {
       select: { id: true },
     });
     return !!user;
+  } catch (err: any) {
+    throw handlePrismaError(err);
+  }
+};
+
+// Profile Image upload
+export const updateUserAvatar = async (userId: number, avatarUrl: string) => {
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new ApiError(
+        404,
+        `User with ID ${userId} not found`,
+        ERROR_CODES.NOT_FOUND,
+        { userId }
+      );
+    }
+
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: userSelect,
+    });
   } catch (err: any) {
     throw handlePrismaError(err);
   }

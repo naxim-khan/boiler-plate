@@ -69,6 +69,7 @@ export const refreshTokenSchema = z.object({
   body: z.object({
     refreshToken: z.string().optional(), // Optional because it can come from cookies
   }).strict(),
+  
 });
 
 // Change password validation schema

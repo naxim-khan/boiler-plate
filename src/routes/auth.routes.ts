@@ -7,7 +7,7 @@ import {
   getMeController,
   changePasswordController,
 } from '../controllers/auth.controllers';
-import { validateRequest } from '../middlewares/validateRequest';
+import { validateRequest, validateRefreshToken } from '../middlewares/validateRequest';
 import { authenticate } from '../middlewares/auth.middleware';
 import {
   registerSchema,
@@ -77,7 +77,7 @@ router.post('/login', validateRequest(loginSchema), loginController);
  *       200:
  *         description: Token refreshed
  */
-router.post('/refresh-token', validateRequest(refreshTokenSchema), refreshTokenController);
+router.post('/refresh-token', validateRefreshToken, refreshTokenController);
 
 /**
  * @swagger

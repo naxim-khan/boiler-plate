@@ -39,13 +39,38 @@ const options: swaggerJsDoc.Options = {
             password: { type: 'string', example: 'newpassword123' },
           },
         },
-        // add other schemas as needed (CreateUser, UpdateUser, etc.)
+        // ===== Add User schema =====
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            name: { type: 'string', example: 'Nazeem Khan' },
+            email: { type: 'string', format: 'email', example: 'nazeem@gmail.com' },
+            role: { type: 'string', enum: ['ADMIN', 'MODERATOR', 'USER'], example: 'USER' },
+            createdAt: { type: 'string', format: 'date-time', example: '2025-01-01T12:00:00Z' },
+            updatedAt: { type: 'string', format: 'date-time', example: '2025-01-02T12:00:00Z' },
+          },
+        },
+        // Optional: Paginated response
+        UsersResponse: {
+          type: 'object',
+          properties: {
+            users: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/User' },
+            },
+            nextCursor: {
+              type: 'integer',
+              nullable: true,
+              description: 'Cursor for next page (null if no more users)',
+            },
+          },
+        },
       },
     },
   },
   apis: ['./src/routes/**/*.ts'], // path to route files
 };
-
 
 export const swaggerDocs = swaggerJsDoc(options);
 
