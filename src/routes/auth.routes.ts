@@ -16,6 +16,8 @@ import {
   changePasswordSchema,
 } from '../validations/auth.validation';
 
+import { rateLimiter } from '../middlewares/rateLimiter';
+
 const router = Router();
 
 /**
@@ -41,7 +43,7 @@ const router = Router();
  *       201:
  *         description: User registered successfully
  */
-router.post('/register', validateRequest(registerSchema), registerController);
+router.post('/register', rateLimiter(10, 300), validateRequest(registerSchema), registerController);
 
 /**
  * @swagger
@@ -59,7 +61,12 @@ router.post('/register', validateRequest(registerSchema), registerController);
  *       200:
  *         description: Successful login
  */
-router.post('/login', validateRequest(loginSchema), loginController);
+router.post(
+  '/login', 
+  rateLimiter(5, 60),
+  validateRequest(loginSchema), 
+  loginController
+);
 
 /**
  * @swagger
@@ -77,7 +84,12 @@ router.post('/login', validateRequest(loginSchema), loginController);
  *       200:
  *         description: Token refreshed
  */
-router.post('/refresh-token', validateRefreshToken, refreshTokenController);
+router.post(
+  '/refresh-token',
+  rateLimiter(30, 300),
+  validateRefreshToken,
+  refreshTokenController
+);
 
 /**
  * @swagger
@@ -105,7 +117,12 @@ router.post('/logout', authenticate, logoutController);
  *       200:
  *         description: User info
  */
-router.get('/me', authenticate, getMeController);
+router.get(
+  '/me',
+  rateLimiter(30, 300), 
+  authenticate, 
+  getMeController,
+);
 
 /**
  * @swagger
@@ -125,6 +142,12 @@ router.get('/me', authenticate, getMeController);
  *       200:
  *         description: Password changed successfully
  */
-router.post('/change-password', authenticate, validateRequest(changePasswordSchema), changePasswordController);
+router.post(
+  '/change-password',
+  rateLimiter(30, 300), 
+  authenticate, 
+  validateRequest(changePasswordSchema), 
+  changePasswordController
+);
 
 export default router;

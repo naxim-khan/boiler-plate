@@ -4,7 +4,7 @@ declare global {
   namespace Express {
     interface Request {
       file?: Multer.File; // multer adds this when uploading single files
-      files?: Multer.File[]; // optional, if you use multiple uploads
+      files?: Multer.File[]; // optional,
       user?: {
         userId: number;
         email: string;

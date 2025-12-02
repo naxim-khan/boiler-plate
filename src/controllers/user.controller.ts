@@ -5,6 +5,8 @@ import { ApiError } from '../common/errors/api-error';
 import { ERROR_CODES } from '../common/errors/error-codes';
 import { buildUserFilters } from '../utils/userFilters';
 import { uploadUserAvatarService } from '../services/user.service';
+import redis from '../config/redis';
+import { RedisKeys } from '../utils/redisKeys';
 
 // export const getAllUsersController = async (req: Request, res: Response, next: NextFunction) => {
 //   try {
@@ -34,10 +36,20 @@ export const getAllUsersController = async (req: Request, res: Response, next: N
 
     // Filtering
     const where = buildUserFilters(req.query);
+    // Redis caching
+    const cacheKey = RedisKeys.usersList(req.query);
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
 
     const users = await userService.getUsersWithPaginationService(limit, cursor, orderBy, where);
+    const response = { users };
 
-    return successResponse(res, "Users retrieved successfully", users);
+    // Cache for 2 minutes
+    await redis.set(cacheKey, JSON.stringify(response), 'EX', 120);
+
+    return successResponse(res, "Users retrieved successfully", response);
   } catch (err) {
     next(err);
   }
@@ -55,7 +67,7 @@ export const getUserByIdController = async (req: Request, res: Response, next: N
 
 export const createUserController = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password, role } = req.body; 
+    const { name, email, password, role } = req.body;
     const user = await userService.createUserService({ name, email, password, role });
     return successResponse(res, "User created successfully", user, 201);
   } catch (err) {
@@ -84,7 +96,7 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
 export const deleteUserController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    
+
     // Prevent admin from deleting themselves (optional safety measure)
     const currentUser = (req as any).user;
     if (currentUser.role === 'ADMIN' && currentUser.userId === id) {
@@ -103,10 +115,10 @@ export const updateSelfController = async (req: Request, res: Response, next: Ne
   try {
     const userId = (req as any).user.userId;
     const data = req.body;
-    
+
     // Remove role from self-update to prevent privilege escalation
     const { role, ...updateData } = data;
-    
+
     const updatedUser = await userService.updateUserService(userId, updateData);
     return successResponse(res, "Profile updated successfully", updatedUser);
   } catch (err) {
@@ -130,7 +142,7 @@ export const deleteSelfController = async (req: Request, res: Response, next: Ne
   try {
     const userId = (req as any).user.userId;
     const deletedUser = await userService.deleteUserService(userId);
-    
+
     // Clear refresh token cookie on self-deletion
     res.clearCookie('refreshToken', {
       httpOnly: true,

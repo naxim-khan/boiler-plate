@@ -12,16 +12,17 @@ import {
   deleteSelfController,
 } from '../controllers/user.controller';
 import { validateRequest } from '../middlewares/validateRequest';
-import { 
-  authenticate, 
-  requireAdmin, 
-  requireModerator, 
+import {
+  authenticate,
+  requireAdmin,
+  requireModerator,
   requireAdminOrOwner,
   canUpdateUser,
   canDeleteUser,
   preventSelfRoleChange,
   normalizeRole
 } from '../middlewares/auth.middleware';
+import { rateLimiter } from '../middlewares/rateLimiter';
 import {
   createUserSchema,
   updateUserSchema,
@@ -52,7 +53,7 @@ router.use(authenticate);
  *       200:
  *         description: Current user profile
  */
-router.get('/profile/me', getSelfController);
+router.get('/profile/me', rateLimiter(20, 300), getSelfController);
 
 /**
  * @swagger
@@ -94,6 +95,7 @@ router.get('/profile/me', getSelfController);
  */
 router.post(
   '/profile/me/avatar',
+  rateLimiter(20, 300),
   uploadAvatar.single('avatar'), // multer middleware
   uploadProfileImageController
 );
@@ -235,7 +237,12 @@ router.post('/profile/avatar', authenticate, uploadAvatar.single('avatar'), uplo
  *       - Filtering by search, role, and date range
  *       - Supports large datasets efficiently
  */
-router.get('/', requireModerator, getAllUsersController);
+router.get(
+  '/',
+  requireModerator,
+  rateLimiter(15, 60),
+  getAllUsersController
+);
 
 /**
  * @swagger
@@ -255,7 +262,12 @@ router.get('/', requireModerator, getAllUsersController);
  *       200:
  *         description: User details
  */
-router.get('/:id', validateRequest(getUserByIdSchema), requireAdminOrOwner, getUserByIdController);
+router.get('/:id',
+  validateRequest(getUserByIdSchema),
+  rateLimiter(15, 60),
+  requireAdminOrOwner,
+  getUserByIdController
+);
 
 /**
  * @swagger
@@ -275,7 +287,14 @@ router.get('/:id', validateRequest(getUserByIdSchema), requireAdminOrOwner, getU
  *       201:
  *         description: User created
  */
-router.post('/', normalizeRole, validateRequest(createUserSchema), requireAdmin, createUserController);
+router.post(
+  '/',
+  normalizeRole,
+  validateRequest(createUserSchema),
+  requireAdmin,
+  rateLimiter(5, 60), // 5 requests per 60 seconds
+  createUserController
+);
 
 /**
  * @swagger
@@ -301,7 +320,14 @@ router.post('/', normalizeRole, validateRequest(createUserSchema), requireAdmin,
  *       200:
  *         description: User updated
  */
-router.put('/:id', normalizeRole, validateRequest(updateUserSchema), canUpdateUser, preventSelfRoleChange, updateUserController);
+router.put('/:id',
+  normalizeRole,
+  validateRequest(updateUserSchema),
+  canUpdateUser,
+  preventSelfRoleChange,
+  rateLimiter(5, 60),
+  updateUserController
+);
 
 /**
  * @swagger
@@ -321,6 +347,12 @@ router.put('/:id', normalizeRole, validateRequest(updateUserSchema), canUpdateUs
  *       200:
  *         description: User deleted
  */
-router.delete('/:id', validateRequest(deleteUserSchema), canDeleteUser, deleteUserController);
+router.delete(
+  '/:id',
+  validateRequest(deleteUserSchema),
+  canDeleteUser,
+  rateLimiter(3, 60),
+  deleteUserController
+);
 
 export default router;

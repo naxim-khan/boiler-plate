@@ -16,10 +16,10 @@ export const validateRefreshToken = (
   next: NextFunction
 ) => {
   try {
-    console.log('=== REFRESH TOKEN VALIDATION DEBUG ===');
-    console.log('Request headers:', req.headers);
-    console.log('Request cookies:', req.cookies);
-    console.log('Request body:', req.body);
+    // console.log('=== REFRESH TOKEN VALIDATION DEBUG ===');
+    // console.log('Request headers:', req.headers);
+    // console.log('Request cookies:', req.cookies);
+    // console.log('Request body:', req.body);
     
     let refreshToken: string | undefined;
 
