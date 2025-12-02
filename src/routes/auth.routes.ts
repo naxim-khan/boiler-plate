@@ -63,7 +63,7 @@ router.post('/register', rateLimiter(10, 300), validateRequest(registerSchema), 
  */
 router.post(
   '/login', 
-  rateLimiter(5, 60),
+  // rateLimiter(5, 60),
   validateRequest(loginSchema), 
   loginController
 );
