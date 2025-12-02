@@ -7,6 +7,7 @@ import { buildUserFilters } from '../utils/userFilters';
 import { uploadUserAvatarService } from '../services/user.service';
 import redis from '../config/redis';
 import { RedisKeys } from '../utils/redisKeys';
+import { clearUserListCache } from '../utils/clearUserCache';
 
 // export const getAllUsersController = async (req: Request, res: Response, next: NextFunction) => {
 //   try {
@@ -69,6 +70,9 @@ export const createUserController = async (req: Request, res: Response, next: Ne
   try {
     const { name, email, password, role } = req.body;
     const user = await userService.createUserService({ name, email, password, role });
+    // invalidate user list cache of redis
+    await clearUserListCache();
+
     return successResponse(res, "User created successfully", user, 201);
   } catch (err) {
     next(err);
@@ -87,6 +91,10 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
     }
 
     const updatedUser = await userService.updateUserService(id, data);
+
+    // invalidate user list cache of redis on update
+    await clearUserListCache();
+
     return successResponse(res, "User updated successfully", updatedUser);
   } catch (err) {
     next(err);
@@ -102,6 +110,9 @@ export const deleteUserController = async (req: Request, res: Response, next: Ne
     if (currentUser.role === 'ADMIN' && currentUser.userId === id) {
       throw new ApiError(400, 'Admins cannot delete their own account via this endpoint. Use profile deletion instead.', ERROR_CODES.INVALID_INPUT);
     }
+
+    // invalidate user list cache of redis on delete
+    await clearUserListCache();
 
     const deletedUser = await userService.deleteUserService(id);
     return successResponse(res, "User deleted successfully", deletedUser);
@@ -120,6 +131,9 @@ export const updateSelfController = async (req: Request, res: Response, next: Ne
     const { role, ...updateData } = data;
 
     const updatedUser = await userService.updateUserService(userId, updateData);
+    // invalidate user list cache of redis on self-update
+    await clearUserListCache();
+
     return successResponse(res, "Profile updated successfully", updatedUser);
   } catch (err) {
     next(err);
@@ -149,6 +163,9 @@ export const deleteSelfController = async (req: Request, res: Response, next: Ne
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
     });
+
+    // invalidate user list cache of redis on self-delete
+    await clearUserListCache();
 
     return successResponse(res, "Your account has been deleted successfully", deletedUser);
   } catch (err) {

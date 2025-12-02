@@ -3,7 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { successResponse } from '../utils/response';
 import { ApiError } from '../common/errors/api-error';
 import { ERROR_CODES } from '../common/errors/error-codes';
-import redis from '../config/redis';
+import { clearUserListCache } from '../utils/clearUserCache';
 
 export const registerController = async (
   req: Request,
@@ -21,18 +21,8 @@ export const registerController = async (
       role,
     });
 
-    // what is pipline
-    // A Redis pipeline is a technique used to send multiple commands to a Redis server in a single network round trip. Instead of sending each command individually and waiting for a response before sending the next one, pipelining allows you to queue up multiple commands and send them all at once. This can significantly improve performance, especially when executing a large number of commands, by reducing the latency associated with multiple network requests.
-
-    // Invalidate user list cache
-    const stream = redis.scanStream({ match: 'user:list*' }); // pattern to match user list caches
-    stream.on('data', (keys) => { // keys is an array of keys matching the pattern
-      if (keys.length) { // only proceed if there are keys to delete
-        const pipeline = redis.pipeline(); // use pipeline for batch operations
-        keys.forEach((key: string) => pipeline.del(key)); // queue delete commands
-        pipeline.exec(); // execute the batch
-      }
-    });
+    // Invalidate user list cache of redis
+    await clearUserListCache();
 
     // Set refresh token as HTTP-only cookie
     res.cookie('refreshToken', authResponse.tokens.refreshToken, {
